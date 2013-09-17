@@ -435,25 +435,25 @@ end
 
 function intersect(x::Interval, y::Interval)
     z = Interval()
-    return ccall((:mpfi_intersect, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
+    ccall((:mpfi_intersect, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
     return z
 end
 
 function union(x::Interval, y::Interval)
     z = Interval()
-    return ccall((:mpfi_union, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
+    ccall((:mpfi_union, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
     return z
 end
 
 function bisect(x::Interval)
     z1, z2 = Interval(), Interval()
-    return ccall((:mpfi_bisect, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z1, &z2, &x)
+    ccall((:mpfi_bisect, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z1, &z2, &x)
     return z1, z2
 end
 
-function blow(x::Interval, y::Interval)
+function blow(x::Interval, y::Float64)
     z = Interval()
-    return ccall((:mpfi_blow, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
+    ccall((:mpfi_blow, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Float64), &z, &x, y)
     return z
 end
 
