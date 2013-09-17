@@ -2,12 +2,14 @@ module MPFI
 
 export
     Interval,
+    bisect,
+    blow,
+    diam,
     diam_abs,
     diam_rel,
-    diam,
     mag,
-    mig,
     mid,
+    mig,
     isbounded
 
 import
@@ -15,7 +17,8 @@ import
         promote, convert, +, *, -, /, exp, isinf, isnan, nan, inf, sqrt,
         square, exp, exp2, expm1, cosh, sinh, tanh, sech, csch, coth, inv,
         sqrt, cbrt, abs, log, log2, log10, log1p, sin, cos, tan, sec,
-        csc, acos, asin, atan, acosh, asinh, atanh
+        csc, acos, asin, atan, acosh, asinh, atanh, isempty, union,
+        intersect, in
 
 type Interval <: Number
     left_prec::Clong
@@ -409,8 +412,57 @@ for f in (:exp,:exp2,:expm1,:cosh,:sinh,:tanh,:sech,:csch,:coth,:inv,
     end
 end
 
+# Set-like functions
+function in(x::Interval, int::Interval)
+    return ccall((:mpfi_is_inside, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}), &x, &int) > 0
+end
+
+for (fJ, fC) in ((:si,:Clong), (:ui,:Culong), (:d,:Float64))
+    @eval begin
+        function in(x::($fC), int::Interval)
+            return ccall(($(string(:mpfi_is_inside_,fJ)), :libmpfi), Int32, (($fC), Ptr{Interval}), x, &int) > 0
+        end
+    end
+end
+
+for (fJ, fC) in ((:z,:BigInt), (:fr,:BigFloat))
+    @eval begin
+        function in(x::($fC), int::Interval)
+            return ccall(($(string(:mpfi_is_inside_,fJ)), :libmpfi), Int32, (Ptr{($fC)}, Ptr{Interval}), &x, &int) > 0
+        end
+    end
+end
+
+function intersect(x::Interval, y::Interval)
+    z = Interval()
+    return ccall((:mpfi_intersect, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
+    return z
+end
+
+function union(x::Interval, y::Interval)
+    z = Interval()
+    return ccall((:mpfi_union, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
+    return z
+end
+
+function bisect(x::Interval)
+    z1, z2 = Interval(), Interval()
+    return ccall((:mpfi_bisect, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z1, &z2, &x)
+    return z1, z2
+end
+
+function blow(x::Interval, y::Interval)
+    z = Interval()
+    return ccall((:mpfi_blow, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
+    return z
+end
+
 function isbounded(x::Interval)
     return ccall((:mpfi_bounded_p, :libmpfi), Int32, (Ptr{Interval},), &x) != 0
+end
+
+function isempty(x::Interval)
+    return ccall((:mpfi_empty_p, :libmpfi), Int32, (Ptr{Interval},), &x) != 0
 end
 
 function isnan(x::Interval)
