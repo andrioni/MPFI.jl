@@ -18,7 +18,7 @@ import
         square, exp, exp2, expm1, cosh, sinh, tanh, sech, csch, coth, inv,
         sqrt, cbrt, abs, log, log2, log10, log1p, sin, cos, tan, sec,
         csc, acos, asin, atan, acosh, asinh, atanh, isempty, union,
-        intersect, in
+        intersect, in, cmp
 
 type Interval <: Number
     left_prec::Clong
@@ -80,6 +80,30 @@ Interval(x::Union(Uint8,Uint16,Uint32)) = Interval(convert(Culong,x))
 
 Interval(x::Float32) = Interval(float64(x))
 Interval(x::Rational) = Interval(num(x)) / Interval(den(x))
+
+# Dyadic constructors
+Interval(x::Real, y::Real) = Interval(promote(x, y)...)
+for (fJ, fC) in ((:si,:Clong), (:ui,:Culong), (:d,:Float64))
+    @eval begin
+        function Interval(x::($fC), y::($fC))
+            z = Interval()
+            ccall(($(string(:mpfi_interv_,fJ)), :libmpfi), Int32, (Ptr{Interval}, ($fC), ($fC)), &z, x, y)
+            return z
+        end
+    end
+end
+
+function Interval(x::BigInt, y::BigInt)
+    z = Interval()
+    ccall((:mpfi_interv_z, :libmpfi), Int32, (Ptr{Interval}, Ptr{BigInt}, Ptr{BigInt}), &z, &x, &y)
+    return z
+end
+
+function Interval(x::BigFloat, y::BigFloat)
+    z = Interval()
+    ccall((:mpfi_interv_fr, :libmpfi), Int32, (Ptr{Interval}, Ptr{BigFloat}, Ptr{BigFloat}), &z, &x, &y)
+    return z
+end
 
 # Conversions to
 convert(::Type{Interval}, x::Rational) = Interval(x)
@@ -471,6 +495,10 @@ end
 
 function isinf(x::Interval)
     return ccall((:mpfi_inf_p, :libmpfi), Int32, (Ptr{Interval},), &x) != 0
+end
+
+function cmp2(x::Interval, y::Interval)
+    return ccall((:mpfi_cmp, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}), &x, &y)
 end
 
 function string(x::Interval)
