@@ -3,9 +3,9 @@
 #### Multiple Precision Floating-point Interval library for Julia
 
 This is a work-in-progress Julia package that wraps [MPFI](http://perso.ens-lyon.fr/nathalie.revol/software.html) 
-for Julia. Currently most functions are available, but not all of them are tested.
+for Julia. All functions should be available, except `mpfi_put_*` and `mpfi_urandom`.
 
-##### Example
+##### Examples
 
 ```julia
 # MPFI uses BigFloats in its internal representation

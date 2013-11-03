@@ -7,10 +7,12 @@ export
     diam,
     diam_abs,
     diam_rel,
+    left,
     mag,
     mid,
     mig,
-    isbounded
+    isbounded,
+    right
 
 import
     Base: precision, string, print, show, showcompact, promote_rule,
@@ -18,7 +20,7 @@ import
         square, exp, exp2, expm1, cosh, sinh, tanh, sech, csch, coth, inv,
         sqrt, cbrt, abs, log, log2, log10, log1p, sin, cos, tan, sec,
         csc, acos, asin, atan, acosh, asinh, atanh, isempty, union,
-        intersect, in, cmp
+        intersect, in, cmp, ldexp
 
 type Interval <: Number
     left_prec::Clong
@@ -105,14 +107,35 @@ function Interval(x::BigFloat, y::BigFloat)
     return z
 end
 
-# Conversions to
+Interval(x::MathConst) = convert(Interval, x)
+
+# Promotion of constants
+promote_rule{s}(::Type{MathConst{s}}, ::Type{Interval}) = Interval
+
+# Conversions to Interval
 convert(::Type{Interval}, x::Rational) = Interval(x)
 convert(::Type{Interval}, x::Real) = Interval(x)
+convert(::Type{Interval}, x::MathConst) = Interval(big(x))
+function convert(::Type{Interval}, ::MathConst{:π})
+    z = Interval()
+    ccall((:mpfi_const_pi,:libmpfi), Cint, (Ptr{Interval},), &z)
+    return z
+end
+function convert(::Type{Interval}, ::MathConst{:γ})
+    z = Interval()
+    ccall((:mpfi_const_euler,:libmpfi), Cint, (Ptr{Interval},), &z)
+    return z
+end
+function convert(::Type{Interval}, ::MathConst{:catalan})
+    z = Interval()
+    ccall((:mpfi_const_catalan,:libmpfi), Cint, (Ptr{Interval},), &z)
+    return z
+end
 
-# Conversions from
+# Conversions from Interval
 function convert(::Type{BigFloat}, x::Interval)
     z = BigFloat()
-    ccall((:mpfi_get_fr,:libmpfi), Float64, (Ptr{BigFloat}, Ptr{Interval}), &z, &x)
+    ccall((:mpfi_get_fr,:libmpfi), Void, (Ptr{BigFloat}, Ptr{Interval}), &z, &x)
     return z
 end
 convert(::Type{Float64}, x::Interval) =
@@ -478,6 +501,31 @@ end
 function blow(x::Interval, y::Float64)
     z = Interval()
     ccall((:mpfi_blow, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Float64), &z, &x, y)
+    return z
+end
+
+function ldexp(x::Interval, y::Culong)
+    z = Interval()
+    ccall((:mpfi_mul_2exp, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Culong), &z, &x, y)
+    return z
+end
+function ldexp(x::Interval, y::Clong)
+    z = Interval()
+    ccall((:mpfi_mul_2si, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Clong), &z, &x, y)
+    return z
+end
+ldexp(x::Interval, y::Signed) = ldexp(x, convert(Clong, y))
+ldexp(x::Interval, y::Unsigned) = ldexp(x, convert(Culong, y))
+
+function left(x::Interval)
+    z = BigFloat()
+    ccall((:mpfi_get_left, :libmpfi), Int32, (Ptr{BigFloat}, Ptr{Interval}), &z, &x)
+    return z
+end
+
+function right(x::Interval)
+    z = BigFloat()
+    ccall((:mpfi_get_right, :libmpfi), Int32, (Ptr{BigFloat}, Ptr{Interval}), &z, &x)
     return z
 end
 
