@@ -5,7 +5,11 @@
 This is a work-in-progress Julia package that wraps [MPFI](http://perso.ens-lyon.fr/nathalie.revol/software.html) 
 for Julia. All functions should be available, except `mpfi_put_*` and `mpfi_urandom`.
 
-##### Examples
+##### Documentation
+
+The documentation is available at http://mpfijl.readthedocs.org/en/latest/
+
+##### Some examples
 
 ```julia
 # MPFI uses BigFloats in its internal representation
