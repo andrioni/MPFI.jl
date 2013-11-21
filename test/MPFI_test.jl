@@ -1,6 +1,3 @@
-using Base.Test
-using MPFI
-
 # Check conversion and output
 for i = 1:10000
     a = {rand(Int8), rand(Int16), rand(Int32), rand(Int64), rand(Int128), 
@@ -18,4 +15,14 @@ end
 
 # Check precision
 a = Interval(1)
-precision(a) == get_bigfloat_precision()
+@test precision(a) == get_bigfloat_precision()
+
+# Check squaring
+a = Interval(-1, 1)
+@test (left(square(a)), right(square(a))) == (0, 1)
+@test (left(a * a), right(a * a)) == (-1, 1)
+
+# Check -
+a = Interval(0, 1)
+@test (left(-a), right(-a)) == (-1, 0)
+@test signbit(right(-a)) == 1
