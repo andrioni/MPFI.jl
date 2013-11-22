@@ -43,6 +43,9 @@ end
 
 MPFI_clear(mpfi::Interval) = ccall((:mpfi_clear, :libmpfi), Void, (Ptr{Interval},), &mpfi)
 
+# Include useful macros and utility functions
+include("utils.jl")
+
 Interval(x::Interval) = x
 
 for (fJ, fC) in ((:si,:Clong), (:ui,:Culong), (:d,:Float64))
@@ -549,6 +552,7 @@ function cmp2(x::Interval, y::Interval)
     return ccall((:mpfi_cmp, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}), &x, &y)
 end
 
+@have_bigrng begin
 function rand!(x::Interval, A::Array{BigFloat})
     for i = 1:length(A)
         A[i] = rand(x)
@@ -566,6 +570,8 @@ end
 rand(x::Interval) = rand(Base.Random.DEFAULT_BIGRNG, x)
 rand(x::Interval, dims::Dims) = rand!(x, Array(BigFloat, dims))
 rand(x::Interval, dims::Int...) = rand!(x, Array(BigFloat, dims...))
+
+end # @have_bigrng
 
 function string(x::Interval)
     # We use the alternate constructor to avoid the GC,
