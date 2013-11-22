@@ -20,7 +20,7 @@ import
         square, exp, exp2, expm1, cosh, sinh, tanh, sech, csch, coth, inv,
         sqrt, cbrt, abs, log, log2, log10, log1p, sin, cos, tan, sec,
         csc, acos, asin, atan, acosh, asinh, atanh, isempty, union,
-        intersect, in, cmp, ldexp
+        intersect, in, cmp, ldexp, rand, rand!
 
 type Interval <: Number
     left_prec::Clong
@@ -548,6 +548,24 @@ end
 function cmp2(x::Interval, y::Interval)
     return ccall((:mpfi_cmp, :libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}), &x, &y)
 end
+
+function rand!(x::Interval, A::Array{BigFloat})
+    for i = 1:length(A)
+        A[i] = rand(x)
+    end
+    A
+end
+
+function rand(r::BigRNG, x::Interval)
+    z = BigFloat()
+    ccall((:mpfi_urandom, :libmpfi), Void,
+          (Ptr{BigFloat}, Ptr{Interval}, Ptr{BigRNG}),
+           &z, &x, &r)
+    return z
+end
+rand(x::Interval) = rand(Base.Random.DEFAULT_BIGRNG, x)
+rand(x::Interval, dims::Dims) = rand!(x, Array(BigFloat, dims))
+rand(x::Interval, dims::Int...) = rand!(x, Array(BigFloat, dims...))
 
 function string(x::Interval)
     # We use the alternate constructor to avoid the GC,

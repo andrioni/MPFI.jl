@@ -26,3 +26,10 @@ a = Interval(-1, 1)
 a = Interval(0, 1)
 @test (left(-a), right(-a)) == (-1, 0)
 @test signbit(right(-a)) == 1
+
+# Check rand
+a = Interval(-1, 1)
+@test -1 <= rand(a) <= 1
+r = rand(a, 1, 3)
+@test size(r) == (1, 3)
+@test typeof(r) == Matrix{BigFloat}
