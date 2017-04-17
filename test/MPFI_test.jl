@@ -15,7 +15,7 @@ end
 
 # Check precision
 a = Interval(1)
-@test precision(a) == get_bigfloat_precision()
+@test precision(a) == precision(BigFloat)
 
 # Check squaring
 a = Interval(-1, 1)

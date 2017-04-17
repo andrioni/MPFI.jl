@@ -33,7 +33,7 @@ type Interval <: Number
     right_d::Ptr{Void}
 
     function Interval()
-        N = get_bigfloat_precision()
+        N = precision(BigFloat)
         z = new(zero(Clong), zero(Cint), zero(Clong), C_NULL,
                 zero(Clong), zero(Cint), zero(Clong), C_NULL)
         ccall((:mpfi_init2,:libmpfi), Void, (Ptr{Interval}, Clong), &z, N)
