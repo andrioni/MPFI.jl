@@ -1,7 +1,7 @@
 # Check conversion and output
 for i = 1:10000
     a = {rand(Int8), rand(Int16), rand(Int32), rand(Int64), rand(Int128), 
-         rand(Uint8), rand(Uint16), rand(Uint32), rand(Uint64), rand(Uint128),
+         rand(UInt8), rand(UInt16), rand(UInt32), rand(UInt64), rand(UInt128),
          rand(Float32), rand(Float64)}
     b = map(string, a)
     for j in a
