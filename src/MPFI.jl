@@ -12,7 +12,8 @@ export
     mid,
     mig,
     isbounded,
-    right
+    right,
+    square
 
 import Base:
     precision, string, print, show, showcompact, promote_rule,
