@@ -12,15 +12,16 @@ export
     mid,
     mig,
     isbounded,
-    right
+    right,
+    square
 
-import
-    Base: precision, string, print, show, showcompact, promote_rule,
-        promote, convert, +, *, -, /, exp, isinf, isnan, nan, inf, sqrt,
-        square, exp, exp2, expm1, cosh, sinh, tanh, sech, csch, coth, inv,
-        sqrt, cbrt, abs, log, log2, log10, log1p, sin, cos, tan, sec,
-        csc, acos, asin, atan, acosh, asinh, atanh, isempty, union,
-        intersect, in, cmp, ldexp, rand, rand!
+import Base:
+    precision, string, print, show, showcompact, promote_rule,
+    promote, convert, +, *, -, /, exp, isinf, isnan, sqrt,
+    exp, exp2, expm1, cosh, sinh, tanh, sech, csch, coth, inv,
+    sqrt, cbrt, abs, log, log2, log10, log1p, sin, cos, tan, sec,
+    csc, acos, asin, atan, acosh, asinh, atanh, isempty, union,
+    intersect, in, cmp, ldexp, rand, rand!
 
 type Interval <: Number
     left_prec::Clong
@@ -31,8 +32,9 @@ type Interval <: Number
     right_sign::Cint
     right_exp::Clong
     right_d::Ptr{Void}
+
     function Interval()
-        N = get_bigfloat_precision()
+        N = precision(BigFloat)
         z = new(zero(Clong), zero(Cint), zero(Clong), C_NULL,
                 zero(Clong), zero(Cint), zero(Clong), C_NULL)
         ccall((:mpfi_init2,:libmpfi), Void, (Ptr{Interval}, Clong), &z, N)
@@ -72,7 +74,7 @@ end
 
 function Interval(x::String, base::Int)
     z = Interval()
-    err = ccall((:mpfi_set_str, :libmpfi), Int32, (Ptr{Interval}, Ptr{Uint8}, Int32), &z, x, base)
+    err = ccall((:mpfi_set_str, :libmpfi), Int32, (Ptr{Interval}, Ptr{UInt8}, Int32), &z, x, base)
     if err != 0; error("Invalid input"); end
     return z
 end
@@ -80,10 +82,10 @@ Interval(x::String) = Interval(x, 10)
 
 Interval(x::Integer) = Interval(BigInt(x))
 
-Interval(x::Union(Bool,Int8,Int16,Int32)) = Interval(convert(Clong,x))
-Interval(x::Union(Uint8,Uint16,Uint32)) = Interval(convert(Culong,x))
+Interval(x::Union{Bool,Int8,Int16,Int32}) = Interval(convert(Clong,x))
+Interval(x::Union{UInt8,UInt16,UInt32}) = Interval(convert(Culong,x))
 
-Interval(x::Float32) = Interval(float64(x))
+Interval(x::Float32) = Interval(Float64(x))
 Interval(x::Rational) = Interval(num(x)) / Interval(den(x))
 
 # Dyadic constructors
@@ -110,26 +112,26 @@ function Interval(x::BigFloat, y::BigFloat)
     return z
 end
 
-Interval(x::MathConst) = convert(Interval, x)
+Interval(x::Irrational) = convert(Interval, x)
 
 # Promotion of constants
-promote_rule{s}(::Type{MathConst{s}}, ::Type{Interval}) = Interval
+promote_rule{s}(::Type{Irrational{s}}, ::Type{Interval}) = Interval
 
 # Conversions to Interval
 convert(::Type{Interval}, x::Rational) = Interval(x)
 convert(::Type{Interval}, x::Real) = Interval(x)
-convert(::Type{Interval}, x::MathConst) = Interval(big(x))
-function convert(::Type{Interval}, ::MathConst{:π})
+convert(::Type{Interval}, x::Irrational) = Interval(big(x))
+function convert(::Type{Interval}, ::Irrational{:π})
     z = Interval()
     ccall((:mpfi_const_pi,:libmpfi), Cint, (Ptr{Interval},), &z)
     return z
 end
-function convert(::Type{Interval}, ::MathConst{:γ})
+function convert(::Type{Interval}, ::Irrational{:γ})
     z = Interval()
     ccall((:mpfi_const_euler,:libmpfi), Cint, (Ptr{Interval},), &z)
     return z
 end
-function convert(::Type{Interval}, ::MathConst{:catalan})
+function convert(::Type{Interval}, ::Irrational{:catalan})
     z = Interval()
     ccall((:mpfi_const_catalan,:libmpfi), Cint, (Ptr{Interval},), &z)
     return z
@@ -144,7 +146,7 @@ end
 convert(::Type{Float64}, x::Interval) =
     ccall((:mpfi_get_d,:libmpfi), Float64, (Ptr{Interval},), &x)
 
-for to in (Int8, Int16, Int32, Int64, Uint8, Uint16, Uint32, Uint64, BigInt, Float32)
+for to in (Int8, Int16, Int32, Int64, UInt8, UInt16, UInt32, UInt64, BigInt, Float32)
     @eval begin
         function convert(::Type{$to}, x::Interval)
             convert($to, convert(BigFloat, x))
@@ -152,7 +154,7 @@ for to in (Int8, Int16, Int32, Int64, Uint8, Uint16, Uint32, Uint64, BigInt, Flo
     end
 end
 convert(::Type{Integer}, x::Interval) = convert(BigInt, x)
-convert(::Type{FloatingPoint}, x::Interval) = convert(BigFloat, x)
+convert(::Type{AbstractFloat}, x::Interval) = convert(BigFloat, x)
 
 # Interval functions with floating-point results
 for f in (:diam_abs, :diam_rel, :diam, :mag, :mig, :mid)
@@ -165,7 +167,7 @@ end
 
 # Basic operations between intervals
 for (fJ, fC) in ((:+,:add), (:-,:sub), (:*,:mul), (:/,:div))
-    @eval begin 
+    @eval begin
         function ($fJ)(x::Interval, y::Interval)
             z = Interval()
             ccall(($(string(:mpfi_,fC)),:libmpfi), Int32, (Ptr{Interval}, Ptr{Interval}, Ptr{Interval}), &z, &x, &y)
